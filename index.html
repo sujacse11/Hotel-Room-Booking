@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avalon Hotel Management System</title>
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">
+          <i data-lucide="hotel"></i>
+        </div>
+        <span class="brand-name">Avalon HMS</span>
+      </div>
+      
+      <ul class="sidebar-menu">
+        <li>
+          <a href="#" class="menu-item active" data-panel="dashboard">
+            <i data-lucide="layout-dashboard"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="menu-item" data-panel="rooms">
+            <i data-lucide="key-round"></i>
+            <span>Rooms Grid</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="menu-item" data-panel="bookings">
+            <i data-lucide="calendar-days"></i>
+            <span>Reservations</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="menu-item" data-panel="housekeeping">
+            <i data-lucide="sparkles"></i>
+            <span>Housekeeping</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="menu-item" data-panel="services">
+            <i data-lucide="soup"></i>
+            <span>Room Service</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="menu-item" data-panel="billing">
+            <i data-lucide="receipt"></i>
+            <span>Billing & Checkout</span>
+          </a>
+        </li>
+      </ul>
+      
+      
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Top Header Bar -->
+      <header class="header-bar">
+        <div class="header-title">
+          <h1>Dashboard</h1>
+        </div>
+        
+        <div class="header-actions">
+          <div class="clock-widget" id="clockDisplay">
+            <i data-lucide="clock"></i>
+            <span>Loading date...</span>
+          </div>
+          
+          <div class="user-profile">
+            <div class="avatar">AD</div>
+            <span style="font-weight: 500;">Admin Desk</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- 1. DASHBOARD PANEL -->
+      <section class="panel" id="dashboardPanel">
+        <!-- Dashboard Metrics Cards -->
+        <div class="metrics-grid">
+          <div class="metric-card indigo">
+            <div class="metric-info">
+              <h3>Occupancy Rate</h3>
+              <div class="metric-value" id="dashOccupancyValue">0%</div>
+            </div>
+            <div class="metric-icon">
+              <i data-lucide="percent"></i>
+            </div>
+          </div>
+          
+          <div class="metric-card emerald">
+            <div class="metric-info">
+              <h3>Check-Ins Today</h3>
+              <div class="metric-value" id="dashCheckinsValue">0</div>
+            </div>
+            <div class="metric-icon">
+              <i data-lucide="calendar-check"></i>
+            </div>
+          </div>
+          
+          <div class="metric-card amber">
+            <div class="metric-info">
+              <h3>Active Service Orders</h3>
+              <div class="metric-value" id="dashOrdersValue">0</div>
+            </div>
+            <div class="metric-icon">
+              <i data-lucide="bell-ring"></i>
+            </div>
+          </div>
+          
+          <div class="metric-card rose">
+            <div class="metric-info">
+              <h3>Daily Revenue</h3>
+              <div class="metric-value" id="dashRevenueValue">₹0</div>
+            </div>
+            <div class="metric-icon">
+              <i data-lucide="indian-rupee"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Layout Columns -->
+        <div class="dashboard-columns">
+          
+          <!-- Left Column: Chart and Floor State -->
+          <div style="display: flex; flex-direction: column; gap: 24px;">
+            <div class="dashboard-card">
+              <div class="card-header-row">
+                <h2>Occupancy Chart</h2>
+                <i data-lucide="activity" style="color: var(--text-muted); width: 18px;"></i>
+              </div>
+              
+              <div class="occupancy-chart-container">
+                <div class="radial-progress">
+                  <svg>
+                    <circle class="bg-circle" cx="70" cy="70" r="64"></circle>
+                    <circle class="val-circle" cx="70" cy="70" r="64"></circle>
+                  </svg>
+                  <div class="percentage-text">0%</div>
+                </div>
+                
+                <div class="chart-legend">
+                  <div class="legend-item">
+                    <span class="legend-label"><span class="legend-dot available"></span>Available</span>
+                    <strong id="legendAvailable">0</strong>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-label"><span class="legend-dot occupied"></span>Occupied</span>
+                    <strong id="legendOccupied">0</strong>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-label"><span class="legend-dot reserved"></span>Reserved</span>
+                    <strong id="legendReserved">0</strong>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-label"><span class="legend-dot dirty"></span>Dirty / Cleaning</span>
+                    <strong id="legendDirty">0</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="dashboard-card">
+              <div class="card-header-row">
+                <h2>Floor-wise Availability</h2>
+                <i data-lucide="layers" style="color: var(--text-muted); width: 18px;"></i>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;" id="dashboardFloorGrid">
+                <!-- Javascript Injection -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Recent Activities -->
+          <div class="dashboard-card">
+            <div class="card-header-row">
+              <h2>Recent Activities</h2>
+              <i data-lucide="history" style="color: var(--text-muted); width: 18px;"></i>
+            </div>
+            <div class="activity-list" id="recentActivityFeed">
+              <!-- Activities list injected here -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 2. ROOMS GRID PANEL -->
+      <section class="panel" id="roomsPanel">
+        <div class="panel-action-bar">
+          <div class="filters-group">
+            <input type="text" class="search-input" id="roomSearchQuery" placeholder="Search room number..." oninput="renderRooms()">
+            
+            <select class="select-input" id="roomFilterType" onchange="renderRooms()">
+              <option value="">All Room Types</option>
+              <option value="Single">Single Rooms</option>
+              <option value="Double">Double Rooms</option>
+              <option value="Suite">Suites</option>
+            </select>
+            
+            <select class="select-input" id="roomFilterStatus" onchange="renderRooms()">
+              <option value="">All Statuses</option>
+              <option value="Available">Available</option>
+              <option value="Occupied">Occupied</option>
+              <option value="Reserved">Reserved</option>
+              <option value="Maintenance">Maintenance</option>
+            </select>
+          </div>
+          
+          <button class="btn btn-primary" onclick="openModal('bookingModal')">
+            <i data-lucide="plus"></i> New Reservation
+          </button>
+        </div>
+
+        <div id="roomsFloorList">
+          <!-- Rooms grouped by floor dynamically rendered here -->
+        </div>
+      </section>
+
+      <!-- 3. RESERVATIONS PANEL -->
+      <section class="panel" id="bookingsPanel">
+        <div class="panel-action-bar">
+          <div class="filters-group">
+            <input type="text" class="search-input" id="bookingSearch" placeholder="Search guest name, room..." oninput="renderBookings()">
+            
+            <select class="select-input" id="bookingFilterStatus" onchange="renderBookings()">
+              <option value="">All Statuses</option>
+              <option value="Reserved">Reserved</option>
+              <option value="Checked-In">Checked-In</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+
+            <select class="select-input" id="bookingFilterRoomType" onchange="renderBookings()">
+              <option value="">All Room Types</option>
+              <option value="Standard Single">Standard Single</option>
+              <option value="Double Deluxe">Double Deluxe</option>
+              <option value="Executive Suite">Executive Suite</option>
+              <option value="Presidential Suite">Presidential Suite</option>
+            </select>
+
+            <select class="select-input" id="bookingFilterType" onchange="renderBookings()">
+              <option value="">All booking Categories</option>
+              <option value="Walk-In">Walk-In</option>
+              <option value="Reservation">Reservation</option>
+            </select>
+          </div>
+          
+          <button class="btn btn-primary" onclick="openModal('bookingModal')">
+            <i data-lucide="plus"></i> New Reservation
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table class="hms-table">
+            <thead>
+              <tr>
+                <th>Booking ID</th>
+                <th>Guest Details</th>
+                <th>Room</th>
+                <th>Stay Dates</th>
+                <th>Nights</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bookingsTableBody">
+              <!-- Bookings list injected here -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 4. HOUSEKEEPING PANEL -->
+      <section class="panel" id="housekeepingPanel">
+        <div class="table-container">
+          <table class="hms-table">
+            <thead>
+              <tr>
+                <th>Room</th>
+                <th>Type</th>
+                <th>Floor</th>
+                <th>Status</th>
+                <th>Cleanliness</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="housekeepingTableBody">
+              <!-- Housekeeping list injected here -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 5. SERVICES PANEL -->
+      <section class="panel" id="servicesPanel">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+          
+          <!-- Food and Services catalog -->
+          <div>
+            <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 16px;">Service Catalog</h2>
+            <div class="services-catalog" id="servicesMenuCatalog">
+              <!-- Services list injected here -->
+            </div>
+          </div>
+          
+          <!-- Active orders -->
+          <div>
+            <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 16px;">Active Service Requests</h2>
+            <div class="table-container">
+              <table class="hms-table" style="font-size: 0.85rem;">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Room</th>
+                    <th>Item</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="activeOrdersTableBody">
+                  <!-- Orders injected here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- 6. BILLING PANEL -->
+      <section class="panel" id="billingPanel">
+        <div class="panel-action-bar">
+          <div class="filters-group">
+            <input type="text" class="search-input" id="billingSearch" placeholder="Search guest name, room..." oninput="renderBilling()">
+            
+            <select class="select-input" id="billingFilterRoomType" onchange="renderBilling()">
+              <option value="">All Room Types</option>
+              <option value="Standard Single">Standard Single</option>
+              <option value="Double Deluxe">Double Deluxe</option>
+              <option value="Executive Suite">Executive Suite</option>
+              <option value="Presidential Suite">Presidential Suite</option>
+            </select>
+            
+            <select class="select-input" id="billingFilterType" onchange="renderBilling()">
+              <option value="">All booking Categories</option>
+              <option value="Walk-In">Walk-In</option>
+              <option value="Reservation">Reservation</option>
+            </select>
+            
+            <select class="select-input" id="billingFilterStatus" onchange="renderBilling()">
+              <option value="Unpaid">Unpaid (Active Guests)</option>
+              <option value="Paid">Paid (Checked-Out History)</option>
+              <option value="All">All Billing Records</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="hms-table">
+            <thead>
+              <tr>
+                <th>Room Number</th>
+                <th>Guest Info</th>
+                <th>Room Charges</th>
+                <th>Service Extras</th>
+                <th>Subtotal</th>
+                <th>Checkout Actions</th>
+              </tr>
+            </thead>
+            <tbody id="billingTableBody">
+              <!-- Active billing rows injected here -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- TOAST NOTIFICATION STACK -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- MODAL: ADD RESERVATION -->
+  <div class="modal-overlay" id="bookingModal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>New Guest Booking</h3>
+        <button class="modal-close" onclick="closeModal('bookingModal')">&times;</button>
+      </div>
+      <form id="bookingForm" novalidate>
+        <div class="modal-body">
+          <!-- Booking Type Selector (Walk-In vs Reservation) -->
+          <div class="booking-type-selector">
+            <div class="booking-type-option">
+              <input type="radio" name="bookType" id="bookTypeWalkIn" value="Walk-In" checked>
+              <label for="bookTypeWalkIn" class="booking-type-label">Walk-In (Check-In Now)</label>
+            </div>
+            <div class="booking-type-option">
+              <input type="radio" name="bookType" id="bookTypeReserve" value="Reservation">
+              <label for="bookTypeReserve" class="booking-type-label">Reservation (Book Ahead)</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="bookGuestName">Guest Full Name</label>
+            <input type="text" class="form-control" id="bookGuestName" required minlength="2" pattern="^[a-zA-Z\s]{2,50}$" placeholder="e.g. Aarav Sharma">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bookGuestEmail">Email Address</label>
+              <input type="email" class="form-control" id="bookGuestEmail" required placeholder="aarav@sharma.in">
+            </div>
+            <div class="form-group">
+              <label for="bookGuestPhone">Phone Number</label>
+              <input type="tel" class="form-control" id="bookGuestPhone" required pattern="^\+?[0-9\s\-()xX]{7,20}$" placeholder="e.g. +91 98765 xxxx">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="bookRoomNumber">Select Room</label>
+            <select class="select-input" id="bookRoomNumber" required>
+              <!-- Populated by JS -->
+            </select>
+            <!-- Dynamic Room Details Preview Callout -->
+            <div id="bookRoomDetailsNote" class="info-callout" style="display: none;"></div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bookCheckIn">Check-In Date & Time</label>
+              <input type="datetime-local" class="form-control" id="bookCheckIn" required>
+            </div>
+            <div class="form-group">
+              <label for="bookCheckOut">Check-Out Date & Time</label>
+              <input type="datetime-local" class="form-control" id="bookCheckOut" required>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bookIdType">Government ID Type</label>
+              <select class="select-input" id="bookIdType" required>
+                <option value="">Select ID Type</option>
+                <option value="Passport">Passport</option>
+                <option value="Driver's License">Driver's License</option>
+                <option value="National ID Card">National ID Card</option>
+                <option value="Voter ID">Voter ID</option>
+                <option value="Other ID">Other Govt. ID</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="bookIdNumber">ID Number</label>
+              <input type="text" class="form-control" id="bookIdNumber" required minlength="4" placeholder="e.g. A1234567">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bookGuestsCount">Number of Guests</label>
+              <input type="number" class="form-control" id="bookGuestsCount" value="1" min="1" max="5" required>
+            </div>
+            <div class="form-group">
+              <label for="bookDeposit">Advance Deposit Paid (₹)</label>
+              <input type="number" class="form-control" id="bookDeposit" value="0" min="0" required placeholder="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="bookSpecialRequests">Special Requests / Notes</label>
+            <textarea class="form-control" id="bookSpecialRequests" rows="2" style="resize: vertical; min-height: 60px;" placeholder="e.g. Late check-out, extra bed, close to elevator..."></textarea>
+          </div>
+          
+          <div class="form-group" style="margin-top: 15px;">
+            <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: var(--text-main);">
+              <input type="checkbox" id="bookSendWhatsApp" checked style="width: 18px; height: 18px; accent-color: #25D366; cursor: pointer;">
+              <span>Send booking details to Guest's WhatsApp immediately</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal('bookingModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="bookingSubmitBtn">Create Check-In</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ROOM QUICK VIEW DETAIL -->
+  <div class="modal-overlay" id="roomDetailsModal">
+    <div class="modal-window" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>Room Details & Actions</h3>
+        <button class="modal-close" onclick="closeRoomManagementModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="roomDetailsContent">
+        <!-- Populated by JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeRoomManagementModal()">Close Window</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ORDER SERVICE -->
+  <div class="modal-overlay" id="serviceOrderModal">
+    <div class="modal-window" style="max-width: 450px;">
+      <div class="modal-header">
+        <h3>Order Service Item</h3>
+        <button class="modal-close" onclick="closeModal('serviceOrderModal')">&times;</button>
+      </div>
+      <form id="serviceOrderForm">
+        <div class="modal-body">
+          <input type="hidden" id="srvOrderServiceId">
+          
+          <div style="background-color: var(--bg-tertiary); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 20px; text-align: center;">
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Ordering:</p>
+            <h3 id="srvOrderServiceName" style="font-weight: 700; margin: 4px 0;">Item Name</h3>
+          </div>
+          
+          <div class="form-group">
+            <label for="srvOrderRoomSelect">Select Occupied Room</label>
+            <select class="select-input" id="srvOrderRoomSelect" required>
+              <!-- JS populated list of checked-in rooms -->
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="srvOrderQty">Quantity</label>
+            <input type="number" class="form-control" id="srvOrderQty" value="1" min="1" max="10" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal('serviceOrderModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Place Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: BILLING & CHECKOUT CHECK -->
+  <div class="modal-overlay" id="invoiceModal">
+    <div class="modal-window" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>Invoice Details & Payment</h3>
+        <button class="modal-close" onclick="closeModal('invoiceModal')">&times;</button>
+      </div>
+      <form id="paymentForm">
+        <input type="hidden" id="invBookingId">
+        <input type="hidden" id="invGrandTotal">
+        
+        <div class="modal-body">
+          <div id="invoiceContent" class="invoice-container">
+            <!-- JS populated invoice layout -->
+          </div>
+          
+          <div class="form-group" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+            <label for="invPaymentMethod">Payment Method</label>
+            <select class="select-input" id="invPaymentMethod" required>
+              <option value="Credit Card">Credit Card</option>
+              <option value="Cash">Cash</option>
+              <option value="UPI / QR Code">UPI / QR Code</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal('invoiceModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="background-color: var(--success); border-color: var(--success);">Pay & Complete Checkout</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JS Controller -->
+  <script src="app.js?v=2.0"></script>
+</body>
+</html>
