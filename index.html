@@ -489,8 +489,8 @@
           
           <div class="form-group" style="margin-top: 15px;">
             <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: var(--text-main);">
-              <input type="checkbox" id="bookSendWhatsApp" checked style="width: 18px; height: 18px; accent-color: #25D366; cursor: pointer;">
-              <span>Send booking details to Guest's WhatsApp immediately</span>
+              <input type="checkbox" id="bookSendHotelRoom" checked style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
+              <span>Send booking details to Guest's Hotel Room immediately</span>
             </label>
           </div>
 
@@ -592,37 +592,37 @@
     </div>
   </div>
   
-  <!-- MODAL: DUMMY WHATSAPP ADMIN CONSOLE -->
-  <div class="modal-overlay" id="whatsappMockModal">
+  <!-- MODAL: DUMMY HOTEL ROOM GUEST CONSOLE -->
+  <div class="modal-overlay" id="hotelRoomMockModal">
     <div class="modal-window" style="max-width: 850px; padding: 0; display: flex; flex-direction: column; height: 600px; overflow: hidden; border-radius: var(--radius-md);">
-      <div class="modal-header" style="padding: 16px 20px; background-color: #075E54; color: white; border-bottom: none; display: flex; align-items: center; justify-content: space-between; border-top-left-radius: var(--radius-md); border-top-right-radius: var(--radius-md);">
+      <div class="modal-header" style="padding: 16px 20px; background-color: var(--primary); color: white; border-bottom: none; display: flex; align-items: center; justify-content: space-between; border-top-left-radius: var(--radius-md); border-top-right-radius: var(--radius-md);">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <i class="lucide-message-circle" style="width: 22px; height: 22px;"></i>
-          <h3 style="color: white; margin: 0; font-size: 1.1rem; font-weight: 600; font-family: var(--font-family);">WhatsApp Admin Console</h3>
+          <i class="lucide-message-square" style="width: 22px; height: 22px;"></i>
+          <h3 style="color: white; margin: 0; font-size: 1.1rem; font-weight: 600; font-family: var(--font-family);">Hotel Room Chat Console</h3>
         </div>
-        <button class="modal-close" onclick="closeModal('whatsappMockModal')" style="color: white; font-size: 1.5rem; background: none; border: none; cursor: pointer; outline: none;">&times;</button>
+        <button class="modal-close" onclick="closeModal('hotelRoomMockModal')" style="color: white; font-size: 1.5rem; background: none; border: none; cursor: pointer; outline: none;">&times;</button>
       </div>
       
       <div style="display: flex; flex: 1; overflow: hidden; background-color: var(--bg-secondary);">
         <!-- LEFT: BOOKING DETAILS -->
         <div style="width: 38%; border-right: 1px solid var(--border-color); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
           <h4 style="margin: 0; color: var(--text-main); font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Booking Snapshot</h4>
-          <div id="waBookingDetails" style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 12px; color: var(--text-muted);">
+          <div id="hrBookingDetails" style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 12px; color: var(--text-muted);">
             <!-- Populated dynamically by JS -->
           </div>
         </div>
         
         <!-- RIGHT: CHAT INTERFACE -->
-        <div style="width: 62%; display: flex; flex-direction: column; background-color: #efeae2; position: relative;">
+        <div style="width: 62%; display: flex; flex-direction: column; background-color: var(--bg-tertiary); position: relative;">
           <!-- CHAT HEADER -->
-          <div style="background-color: #f0f2f5; padding: 10px 16px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; z-index: 5;">
+          <div style="background-color: var(--bg-secondary); padding: 10px 16px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; z-index: 5;">
             <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 38px; height: 38px; border-radius: 50%; background-color: var(--primary-glow); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); font-size: 0.85rem;" id="waChatAvatar">
+              <div style="width: 38px; height: 38px; border-radius: 50%; background-color: var(--primary-glow); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); font-size: 0.85rem;" id="hrChatAvatar">
                 AS
               </div>
               <div>
-                <div style="font-weight: 600; color: var(--text-main); font-size: 0.85rem;" id="waChatName">Guest Name</div>
-                <div style="font-size: 0.72rem; color: #00a884; font-weight: 500;">online</div>
+                <div style="font-weight: 600; color: var(--text-main); font-size: 0.85rem;" id="hrChatName">Guest Name</div>
+                <div style="font-size: 0.72rem; color: var(--success); font-weight: 500;">connected</div>
               </div>
             </div>
             <div style="color: var(--text-muted); display: flex; gap: 16px; align-items: center;">
@@ -632,17 +632,17 @@
           </div>
           
           <!-- CHAT MESSAGES BODY -->
-          <div id="waChatMessages" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-blend-mode: overlay; background-color: #efeae2; background-repeat: repeat; border-bottom: 1px solid var(--border-color);">
+          <div id="hrChatMessages" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; background-color: var(--bg-tertiary); border-bottom: 1px solid var(--border-color);">
             <!-- Message bubbles injected dynamically -->
           </div>
           
           <!-- CHAT INPUT FOOTER -->
-          <div style="background-color: #f0f2f5; padding: 10px 16px; display: flex; align-items: center; gap: 12px;">
+          <div style="background-color: var(--bg-secondary); padding: 10px 16px; display: flex; align-items: center; gap: 12px;">
             <i class="lucide-smile" style="width: 22px; height: 22px; color: var(--text-muted); cursor: pointer;"></i>
             <i class="lucide-paperclip" style="width: 22px; height: 22px; color: var(--text-muted); cursor: pointer;"></i>
-            <form id="waChatForm" style="display: flex; flex: 1; gap: 12px; margin: 0; align-items: center;">
-              <input type="text" id="waChatInput" placeholder="Type a message" required style="flex: 1; border: none; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; background-color: white; outline: none;">
-              <button type="submit" style="background-color: #00a884; color: white; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; outline: none;">
+            <form id="hrChatForm" style="display: flex; flex: 1; gap: 12px; margin: 0; align-items: center;">
+              <input type="text" id="hrChatInput" placeholder="Type a message to the guest" required style="flex: 1; border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; background-color: var(--bg-tertiary); color: var(--text-main); outline: none;">
+              <button type="submit" style="background-color: var(--primary); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; outline: none;">
                 <i class="lucide-send" style="width: 16px; height: 16px; margin-left: 2px;"></i>
               </button>
             </form>

@@ -807,17 +807,17 @@ function renderBookings() {
       actionsHtml = `
         <button class="btn btn-sm btn-primary" onclick="performCheckIn('${b.id}')">Check In</button>
         <button class="btn btn-sm btn-danger" onclick="cancelBooking('${b.id}')">Cancel</button>
-        <button class="btn btn-sm" onclick="openWhatsAppMock('${b.id}', 'confirmation')" style="background-color: #25D366; border-color: #25D366; color: white;" title="Send WhatsApp Confirmation">Confirm WA</button>
+        <button class="btn btn-sm" onclick="openHotelRoomMock('${b.id}', 'confirmation')" style="background-color: var(--primary); border-color: var(--primary); color: white;" title="Send Hotel Room Chat Confirmation">Confirm HR</button>
       `;
     } else if (b.status === 'Checked-In') {
       actionsHtml = `
         <button class="btn btn-sm" onclick="openCheckoutBilling('${b.id}')" style="background-color: var(--success); border-color: var(--success);">Checkout</button>
-        <button class="btn btn-sm" onclick="openWhatsAppMock('${b.id}', 'check-in')" style="background-color: #25D366; border-color: #25D366; color: white;" title="Send WhatsApp Check-In Notification">Notify WA</button>
+        <button class="btn btn-sm" onclick="openHotelRoomMock('${b.id}', 'check-in')" style="background-color: var(--primary); border-color: var(--primary); color: white;" title="Send Hotel Room Chat Check-In Notification">Notify HR</button>
       `;
     } else if (b.status === 'Completed') {
       actionsHtml = `
         <button class="btn btn-sm btn-success" onclick="openCheckoutBilling('${b.id}')" style="background-color: var(--success); border-color: var(--success);">View Receipt</button>
-        <button class="btn btn-sm" onclick="openWhatsAppMock('${b.id}', 'receipt')" style="background-color: #25D366; border-color: #25D366; color: white;" title="Send WhatsApp Receipt">Receipt WA</button>
+        <button class="btn btn-sm" onclick="openHotelRoomMock('${b.id}', 'receipt')" style="background-color: var(--primary); border-color: var(--primary); color: white;" title="Send Hotel Room Chat Receipt">Receipt HR</button>
       `;
     } else {
       actionsHtml = `<span style="font-size: 0.8rem; color: var(--text-muted);">No actions</span>`;
@@ -860,24 +860,24 @@ function cancelBooking(bookingId) {
   showToast(`Booking ${booking.id} cancelled.`);
 }
 
-let currentWhatsAppBookingId = null;
+let currentHotelRoomBookingId = null;
 
-function openWhatsAppMock(bookingId, type) {
+function openHotelRoomMock(bookingId, type) {
   const booking = state.bookings.find(b => b.id === bookingId);
   if (!booking) return;
   
-  currentWhatsAppBookingId = bookingId;
+  currentHotelRoomBookingId = bookingId;
   
   // 1. Populate guest info header
-  document.getElementById('waChatName').textContent = booking.guestName;
+  document.getElementById('hrChatName').textContent = booking.guestName;
   
   // Avatar initials
   const initials = booking.guestName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-  document.getElementById('waChatAvatar').textContent = initials;
+  document.getElementById('hrChatAvatar').textContent = initials;
   
   // 2. Populate booking details snapshot on left
   const room = state.rooms.find(r => r.number === booking.roomNumber);
-  const detailsContainer = document.getElementById('waBookingDetails');
+  const detailsContainer = document.getElementById('hrBookingDetails');
   
   const checkInDate = new Date(booking.checkIn).toLocaleDateString();
   const checkOutDate = new Date(booking.checkOut).toLocaleDateString();
@@ -941,7 +941,7 @@ function openWhatsAppMock(bookingId, type) {
   }
   
   // Set messages container
-  const messagesContainer = document.getElementById('waChatMessages');
+  const messagesContainer = document.getElementById('hrChatMessages');
   messagesContainer.innerHTML = '';
   
   // Inbound & Outbound messages list
@@ -949,7 +949,7 @@ function openWhatsAppMock(bookingId, type) {
   const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
   // Render Admin Outbound Message
-  messagesContainer.appendChild(createWaMessageBubble(message, true, timeStr));
+  messagesContainer.appendChild(createHrMessageBubble(message, true, timeStr));
   
   // Render automatic Guest response after 1s
   setTimeout(() => {
@@ -960,14 +960,14 @@ function openWhatsAppMock(bookingId, type) {
       guestReply = "Got it, thank you! I'm in my room now.";
     }
     const responseTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    messagesContainer.appendChild(createWaMessageBubble(guestReply, false, responseTimeStr));
+    messagesContainer.appendChild(createHrMessageBubble(guestReply, false, responseTimeStr));
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }, 1200);
   
   // Reset input field
-  document.getElementById('waChatInput').value = '';
+  document.getElementById('hrChatInput').value = '';
   
-  openModal('whatsappMockModal');
+  openModal('hotelRoomMockModal');
   
   // Scroll messages to bottom
   setTimeout(() => {
@@ -975,7 +975,7 @@ function openWhatsAppMock(bookingId, type) {
   }, 50);
 }
 
-function createWaMessageBubble(text, isOutgoing, timeStr) {
+function createHrMessageBubble(text, isOutgoing, timeStr) {
   const bubble = document.createElement('div');
   bubble.style.maxWidth = '75%';
   bubble.style.padding = '8px 12px';
@@ -989,44 +989,44 @@ function createWaMessageBubble(text, isOutgoing, timeStr) {
   
   if (isOutgoing) {
     bubble.style.alignSelf = 'flex-end';
-    bubble.style.backgroundColor = '#d9fdd3'; // standard WhatsApp outbound green
-    bubble.style.color = '#303030';
+    bubble.style.backgroundColor = 'var(--primary)';
+    bubble.style.color = '#ffffff';
     bubble.style.borderTopRightRadius = '0';
     bubble.style.boxShadow = '0 1px 0.5px rgba(0,0,0,0.13)';
   } else {
     bubble.style.alignSelf = 'flex-start';
-    bubble.style.backgroundColor = '#ffffff'; // standard WhatsApp inbound white
-    bubble.style.color = '#303030';
+    bubble.style.backgroundColor = 'var(--bg-secondary)';
+    bubble.style.color = 'var(--text-main)';
     bubble.style.borderTopLeftRadius = '0';
     bubble.style.boxShadow = '0 1px 0.5px rgba(0,0,0,0.13)';
   }
   
-  // Format WhatsApp bold formatting (*text* -> <strong>text</strong>)
+  // Format bold formatting (*text* -> <strong>text</strong>)
   const formattedText = text.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
      
   bubble.innerHTML = `
     <div style="margin-bottom: 2px;">${formattedText}</div>
-    <div style="font-size: 0.65rem; color: #8696a0; text-align: right; margin-top: 2px; font-weight: 500;">
-      ${timeStr} ${isOutgoing ? '<span style="color: #53bdeb; margin-left: 2px; font-size: 0.75rem;">✓✓</span>' : ''}
+    <div style="font-size: 0.65rem; color: ${isOutgoing ? 'rgba(255, 255, 255, 0.7)' : 'var(--text-muted)'}; text-align: right; margin-top: 2px; font-weight: 500;">
+      ${timeStr} ${isOutgoing ? '<span style="color: rgba(255, 255, 255, 0.9); margin-left: 2px; font-size: 0.75rem;">✓✓</span>' : ''}
     </div>
   `;
   
   return bubble;
 }
 
-function sendWaMockMessage(event) {
+function sendHrMockMessage(event) {
   if (event) event.preventDefault();
   
-  const input = document.getElementById('waChatInput');
+  const input = document.getElementById('hrChatInput');
   const messageText = input.value.trim();
   if (!messageText) return;
   
-  const messagesContainer = document.getElementById('waChatMessages');
+  const messagesContainer = document.getElementById('hrChatMessages');
   const now = new Date();
   const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
   // Render Admin message
-  messagesContainer.appendChild(createWaMessageBubble(messageText, true, timeStr));
+  messagesContainer.appendChild(createHrMessageBubble(messageText, true, timeStr));
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
   input.value = '';
   
@@ -1042,7 +1042,7 @@ function sendWaMockMessage(event) {
     const randomReply = replies[Math.floor(Math.random() * replies.length)];
     const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
-    messagesContainer.appendChild(createWaMessageBubble(randomReply, false, replyTimeStr));
+    messagesContainer.appendChild(createHrMessageBubble(randomReply, false, replyTimeStr));
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }, 1000);
 }
@@ -1361,11 +1361,11 @@ function handleAddBookingSubmit(e) {
   logActivity(`New ${bookingType} booking ${newBooking.id} created for ${guestName} (Room ${room.number})`, 'booking');
   saveState();
 
-  // WhatsApp booking confirmation option
-  const sendWhatsAppCheckbox = document.getElementById('bookSendWhatsApp');
-  if (sendWhatsAppCheckbox && sendWhatsAppCheckbox.checked) {
+  // Hotel Room booking confirmation option
+  const sendHotelRoomCheckbox = document.getElementById('bookSendHotelRoom');
+  if (sendHotelRoomCheckbox && sendHotelRoomCheckbox.checked) {
     setTimeout(() => {
-      openWhatsAppMock(newBooking.id, 'confirmation');
+      openHotelRoomMock(newBooking.id, 'confirmation');
     }, 800);
   }
 
@@ -2336,9 +2336,9 @@ window.addEventListener('DOMContentLoaded', () => {
     paymentForm.addEventListener('submit', handleCheckoutPayment);
   }
 
-  const waChatForm = document.getElementById('waChatForm');
-  if (waChatForm) {
-    waChatForm.addEventListener('submit', sendWaMockMessage);
+  const hrChatForm = document.getElementById('hrChatForm');
+  if (hrChatForm) {
+    hrChatForm.addEventListener('submit', sendHrMockMessage);
   }
   
   const paymentMethodSelect = document.getElementById('invPaymentMethod');
