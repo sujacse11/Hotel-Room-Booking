@@ -807,16 +807,17 @@ function renderBookings() {
       actionsHtml = `
         <button class="btn btn-sm btn-primary" onclick="performCheckIn('${b.id}')">Check In</button>
         <button class="btn btn-sm btn-danger" onclick="cancelBooking('${b.id}')">Cancel</button>
-        <button class="btn btn-sm" onclick="sendWhatsAppConfirmation('${b.id}')" style="background-color: #25D366; border-color: #25D366; color: white;" title="Send WhatsApp Confirmation">Confirm WA</button>
+        <button class="btn btn-sm" onclick="openWhatsAppMock('${b.id}', 'confirmation')" style="background-color: #25D366; border-color: #25D366; color: white;" title="Send WhatsApp Confirmation">Confirm WA</button>
       `;
     } else if (b.status === 'Checked-In') {
       actionsHtml = `
         <button class="btn btn-sm" onclick="openCheckoutBilling('${b.id}')" style="background-color: var(--success); border-color: var(--success);">Checkout</button>
-        <button class="btn btn-sm" onclick="sendWhatsAppConfirmation('${b.id}')" style="background-color: #25D366; border-color: #25D366; color: white;" title="Send WhatsApp Check-In Notification">Notify WA</button>
+        <button class="btn btn-sm" onclick="openWhatsAppMock('${b.id}', 'check-in')" style="background-color: #25D366; border-color: #25D366; color: white;" title="Send WhatsApp Check-In Notification">Notify WA</button>
       `;
     } else if (b.status === 'Completed') {
       actionsHtml = `
-        <button class="btn btn-sm" onclick="sendWhatsAppConfirmation('${b.id}')" style="background-color: #25D366; border-color: #25D366; color: white;" title="Send WhatsApp Receipt">Receipt WA</button>
+        <button class="btn btn-sm btn-success" onclick="openCheckoutBilling('${b.id}')" style="background-color: var(--success); border-color: var(--success);">View Receipt</button>
+        <button class="btn btn-sm" onclick="openWhatsAppMock('${b.id}', 'receipt')" style="background-color: #25D366; border-color: #25D366; color: white;" title="Send WhatsApp Receipt">Receipt WA</button>
       `;
     } else {
       actionsHtml = `<span style="font-size: 0.8rem; color: var(--text-muted);">No actions</span>`;
@@ -859,23 +860,62 @@ function cancelBooking(bookingId) {
   showToast(`Booking ${booking.id} cancelled.`);
 }
 
-function sendWhatsAppConfirmation(bookingId) {
+let currentWhatsAppBookingId = null;
+
+function openWhatsAppMock(bookingId, type) {
   const booking = state.bookings.find(b => b.id === bookingId);
   if (!booking) return;
   
-  let cleanPhone = booking.guestPhone.replace(/[^0-9]/g, '');
-  if (cleanPhone.length === 10) {
-    cleanPhone = '91' + cleanPhone;
-  }
+  currentWhatsAppBookingId = bookingId;
   
-  // Validate clean phone number length for real WhatsApp sending
-  if (cleanPhone.length < 10 || booking.guestPhone.toLowerCase().includes('x')) {
-    showToast("Cannot open WhatsApp. Phone number is a sample placeholder (ends in xxxx).", "warning");
-    return;
-  }
+  // 1. Populate guest info header
+  document.getElementById('waChatName').textContent = booking.guestName;
   
+  // Avatar initials
+  const initials = booking.guestName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  document.getElementById('waChatAvatar').textContent = initials;
+  
+  // 2. Populate booking details snapshot on left
+  const room = state.rooms.find(r => r.number === booking.roomNumber);
+  const detailsContainer = document.getElementById('waBookingDetails');
+  
+  const checkInDate = new Date(booking.checkIn).toLocaleDateString();
+  const checkOutDate = new Date(booking.checkOut).toLocaleDateString();
+  
+  detailsContainer.innerHTML = `
+    <div style="background-color: var(--bg-tertiary); padding: 12px; border-radius: var(--radius-sm); border-left: 3px solid var(--primary); margin-bottom: 4px;">
+      <div style="font-weight: 600; font-size: 0.8rem; color: var(--text-main); margin-bottom: 2px;">Guest Status</div>
+      <span class="badge ${booking.status === 'Checked-In' ? 'badge-success' : booking.status === 'Completed' ? 'badge-info' : 'badge-warning'}">${booking.status}</span>
+    </div>
+    <div>
+      <strong style="color: var(--text-main);">Booking ID</strong>
+      <div style="margin-top: 2px;">${booking.id}</div>
+    </div>
+    <div>
+      <strong style="color: var(--text-main);">Room Number</strong>
+      <div style="margin-top: 2px;">Room ${booking.roomNumber} (${room ? room.type : 'N/A'})</div>
+    </div>
+    <div>
+      <strong style="color: var(--text-main);">Stay Period</strong>
+      <div style="margin-top: 2px;">${checkInDate} to ${checkOutDate}</div>
+    </div>
+    <div>
+      <strong style="color: var(--text-main);">Contact Number</strong>
+      <div style="margin-top: 2px;">${booking.guestPhone}</div>
+    </div>
+    <div>
+      <strong style="color: var(--text-main);">Email Address</strong>
+      <div style="margin-top: 2px;">${booking.guestEmail}</div>
+    </div>
+    <div>
+      <strong style="color: var(--text-main);">Grand Total Charges</strong>
+      <div style="margin-top: 2px; font-weight: 700; color: var(--primary);">₹${booking.grandTotal || booking.roomCharges || 0}</div>
+    </div>
+  `;
+  
+  // 3. Generate initial message content
   let message = '';
-  if (booking.status === 'Completed') {
+  if (type === 'receipt') {
     message = `Hello *${booking.guestName}*, checkout receipt from *Avalon Boutique Hotel* 🏨:\n\n` +
       `*Booking ID:* ${booking.id}\n` +
       `*Room Number:* ${booking.roomNumber}\n` +
@@ -883,7 +923,7 @@ function sendWhatsAppConfirmation(bookingId) {
       `*Payment Method:* ${booking.paymentMethod || 'Cash'}\n` +
       `*Check-Out Time:* ${new Date(booking.checkOut).toLocaleString()}\n\n` +
       `Thank you for staying with us! We hope to see you again soon.`;
-  } else if (booking.status === 'Checked-In') {
+  } else if (type === 'check-in') {
     message = `Hello *${booking.guestName}*, check-in notification from *Avalon Boutique Hotel* 🏨:\n\n` +
       `*Booking ID:* ${booking.id}\n` +
       `*Room Number:* ${booking.roomNumber}\n` +
@@ -900,9 +940,111 @@ function sendWhatsAppConfirmation(bookingId) {
       `We look forward to welcoming you!`;
   }
   
-  const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
-  window.open(waUrl, '_blank');
-  logActivity(`Shared booking details via WhatsApp for ${booking.id}`, 'booking');
+  // Set messages container
+  const messagesContainer = document.getElementById('waChatMessages');
+  messagesContainer.innerHTML = '';
+  
+  // Inbound & Outbound messages list
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
+  // Render Admin Outbound Message
+  messagesContainer.appendChild(createWaMessageBubble(message, true, timeStr));
+  
+  // Render automatic Guest response after 1s
+  setTimeout(() => {
+    let guestReply = "Thank you! Received.";
+    if (type === 'receipt') {
+      guestReply = "Thank you very much. I got the receipt. Had a great stay!";
+    } else if (type === 'check-in') {
+      guestReply = "Got it, thank you! I'm in my room now.";
+    }
+    const responseTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    messagesContainer.appendChild(createWaMessageBubble(guestReply, false, responseTimeStr));
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }, 1200);
+  
+  // Reset input field
+  document.getElementById('waChatInput').value = '';
+  
+  openModal('whatsappMockModal');
+  
+  // Scroll messages to bottom
+  setTimeout(() => {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }, 50);
+}
+
+function createWaMessageBubble(text, isOutgoing, timeStr) {
+  const bubble = document.createElement('div');
+  bubble.style.maxWidth = '75%';
+  bubble.style.padding = '8px 12px';
+  bubble.style.borderRadius = '8px';
+  bubble.style.fontSize = '0.82rem';
+  bubble.style.lineHeight = '1.4';
+  bubble.style.position = 'relative';
+  bubble.style.wordBreak = 'break-word';
+  bubble.style.whiteSpace = 'pre-wrap';
+  bubble.style.fontFamily = 'sans-serif';
+  
+  if (isOutgoing) {
+    bubble.style.alignSelf = 'flex-end';
+    bubble.style.backgroundColor = '#d9fdd3'; // standard WhatsApp outbound green
+    bubble.style.color = '#303030';
+    bubble.style.borderTopRightRadius = '0';
+    bubble.style.boxShadow = '0 1px 0.5px rgba(0,0,0,0.13)';
+  } else {
+    bubble.style.alignSelf = 'flex-start';
+    bubble.style.backgroundColor = '#ffffff'; // standard WhatsApp inbound white
+    bubble.style.color = '#303030';
+    bubble.style.borderTopLeftRadius = '0';
+    bubble.style.boxShadow = '0 1px 0.5px rgba(0,0,0,0.13)';
+  }
+  
+  // Format WhatsApp bold formatting (*text* -> <strong>text</strong>)
+  const formattedText = text.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
+     
+  bubble.innerHTML = `
+    <div style="margin-bottom: 2px;">${formattedText}</div>
+    <div style="font-size: 0.65rem; color: #8696a0; text-align: right; margin-top: 2px; font-weight: 500;">
+      ${timeStr} ${isOutgoing ? '<span style="color: #53bdeb; margin-left: 2px; font-size: 0.75rem;">✓✓</span>' : ''}
+    </div>
+  `;
+  
+  return bubble;
+}
+
+function sendWaMockMessage(event) {
+  if (event) event.preventDefault();
+  
+  const input = document.getElementById('waChatInput');
+  const messageText = input.value.trim();
+  if (!messageText) return;
+  
+  const messagesContainer = document.getElementById('waChatMessages');
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
+  // Render Admin message
+  messagesContainer.appendChild(createWaMessageBubble(messageText, true, timeStr));
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  input.value = '';
+  
+  // Render simulated quick reply
+  setTimeout(() => {
+    const replies = [
+      "Thank you for the update!",
+      "Got it. Thanks!",
+      "Okay, perfect.",
+      "Understood. Thanks for your assistance!",
+      "Great, thank you!"
+    ];
+    const randomReply = replies[Math.floor(Math.random() * replies.length)];
+    const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    messagesContainer.appendChild(createWaMessageBubble(randomReply, false, replyTimeStr));
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }, 1000);
 }
 
 function checkBookingRoomConflict(roomNumber, checkInStr, checkOutStr, excludeBookingId = null) {
@@ -1218,14 +1360,15 @@ function handleAddBookingSubmit(e) {
   
   logActivity(`New ${bookingType} booking ${newBooking.id} created for ${guestName} (Room ${room.number})`, 'booking');
   saveState();
-  
+
   // WhatsApp booking confirmation option
   const sendWhatsAppCheckbox = document.getElementById('bookSendWhatsApp');
   if (sendWhatsAppCheckbox && sendWhatsAppCheckbox.checked) {
     setTimeout(() => {
-      sendWhatsAppConfirmation(newBooking.id);
-    }, 100);
+      openWhatsAppMock(newBooking.id, 'confirmation');
+    }, 800);
   }
+
   
   closeModal('bookingModal');
   form.reset();
@@ -1574,6 +1717,221 @@ function renderBilling() {
   });
 }
 
+function updatePaymentDetailsUI(method, isCompleted = false, savedDetails = null, grandTotal = 0) {
+  const container = document.getElementById('paymentDetailsContainer');
+  if (!container) return;
+
+  // Clear container
+  container.innerHTML = '';
+  
+  if (!method) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'block';
+
+  // Base styling for the container
+  container.style.border = '1px solid var(--border-color)';
+  container.style.borderRadius = 'var(--radius-md)';
+  container.style.padding = '16px';
+  container.style.backgroundColor = 'var(--bg-tertiary)';
+  container.style.marginBottom = '15px';
+
+  let html = '';
+  
+  // Show Completed banner only if completed. No Demo Mode banner.
+  if (isCompleted) {
+    html += `
+      <div style="background-color: var(--success-glow); border-left: 4px solid var(--success); padding: 8px 12px; margin-bottom: 15px; border-radius: 4px; font-size: 0.85rem; color: var(--success); font-weight: 500; display: flex; align-items: center; gap: 8px;">
+        <i class="lucide-check-circle" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+        <span><strong>Payment Complete:</strong> Archived transaction details are shown below.</span>
+      </div>
+    `;
+  }
+
+  const disabledAttr = isCompleted ? 'disabled' : '';
+
+  if (method === 'Credit Card') {
+    const cardHolder = isCompleted ? (savedDetails ? (savedDetails.cardHolder || '') : '') : '';
+    const cardNumber = isCompleted ? (savedDetails ? (savedDetails.cardNumber || '') : '') : '';
+    const cardExpiry = isCompleted ? (savedDetails ? (savedDetails.cardExpiry || '') : '') : '';
+    const cardCvv = isCompleted ? (savedDetails ? (savedDetails.cardCvv || '') : '') : '';
+
+    html += `
+      <h4 style="margin-top: 0; margin-bottom: 12px; font-size: 0.95rem; color: var(--text-main); font-weight: 600; display: flex; align-items: center; gap: 6px;">
+        <i class="lucide-credit-card" style="width: 16px; height: 16px;"></i> Credit Card Information
+      </h4>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label for="invCardHolder" style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; display: block;">Cardholder Name</label>
+        <input type="text" class="form-control" id="invCardHolder" required minlength="3" placeholder="John Doe" value="${cardHolder}" ${disabledAttr} style="width: 100%; box-sizing: border-box;">
+      </div>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label for="invCardNumber" style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; display: block;">Card Number</label>
+        <input type="text" class="form-control" id="invCardNumber" required pattern="^\\d{4}\\s\\d{4}\\s\\d{4}\\s\\d{4}$|^\\d{16}$" placeholder="4111 1111 1111 1111" value="${cardNumber}" ${disabledAttr} style="width: 100%; box-sizing: border-box;" maxlength="19">
+      </div>
+      <div class="form-row" style="display: flex; gap: 12px;">
+        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+          <label for="invCardExpiry" style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; display: block;">Expiry Date</label>
+          <input type="text" class="form-control" id="invCardExpiry" required pattern="^(0[1-9]|1[0-2])\\/?([0-9]{2})$" placeholder="MM/YY" value="${cardExpiry}" ${disabledAttr} style="width: 100%; box-sizing: border-box;" maxlength="5">
+        </div>
+        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+          <label for="invCardCvv" style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; display: block;">CVV</label>
+          <input type="password" class="form-control" id="invCardCvv" required pattern="^\\d{3,4}$" placeholder="123" value="${cardCvv}" ${disabledAttr} style="width: 100%; box-sizing: border-box;" maxlength="4">
+        </div>
+      </div>
+    `;
+  } else if (method === 'UPI / QR Code') {
+    const upiId = isCompleted ? (savedDetails ? (savedDetails.upiId || '') : '') : '';
+    const upiTxnId = isCompleted ? (savedDetails ? (savedDetails.upiTxnId || '') : '') : '';
+
+    html += `
+      <h4 style="margin-top: 0; margin-bottom: 12px; font-size: 0.95rem; color: var(--text-main); font-weight: 600; display: flex; align-items: center; gap: 6px;">
+        <i class="lucide-qr-code" style="width: 16px; height: 16px;"></i> UPI / QR Code Payment
+      </h4>
+      
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 15px; margin-bottom: 15px; width: 140px; margin-left: auto; margin-right: auto; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+        <svg width="100" height="100" viewBox="0 0 100 100" style="display: block;">
+          <rect x="0" y="0" width="30" height="30" fill="var(--text-main)" />
+          <rect x="5" y="5" width="20" height="20" fill="white" />
+          <rect x="10" y="10" width="10" height="10" fill="var(--text-main)" />
+          
+          <rect x="70" y="0" width="30" height="30" fill="var(--text-main)" />
+          <rect x="75" y="5" width="20" height="20" fill="white" />
+          <rect x="80" y="10" width="10" height="10" fill="var(--text-main)" />
+          
+          <rect x="0" y="70" width="30" height="30" fill="var(--text-main)" />
+          <rect x="5" y="75" width="20" height="20" fill="white" />
+          <rect x="10" y="80" width="10" height="10" fill="var(--text-main)" />
+          
+          <rect x="40" y="0" width="10" height="10" fill="var(--text-main)" />
+          <rect x="50" y="10" width="10" height="10" fill="var(--text-main)" />
+          <rect x="40" y="20" width="20" height="10" fill="var(--text-main)" />
+          
+          <rect x="0" y="40" width="10" height="10" fill="var(--text-main)" />
+          <rect x="10" y="50" width="10" height="10" fill="var(--text-main)" />
+          <rect x="20" y="40" width="10" height="20" fill="var(--text-main)" />
+          
+          <rect x="40" y="40" width="20" height="20" fill="var(--text-main)" />
+          <rect x="40" y="50" width="10" height="10" fill="white" />
+          
+          <rect x="70" y="40" width="10" height="20" fill="var(--text-main)" />
+          <rect x="80" y="50" width="20" height="10" fill="var(--text-main)" />
+          <rect x="90" y="40" width="10" height="10" fill="var(--text-main)" />
+          
+          <rect x="40" y="70" width="10" height="20" fill="var(--text-main)" />
+          <rect x="50" y="80" width="20" height="10" fill="var(--text-main)" />
+          
+          <rect x="70" y="70" width="20" height="10" fill="var(--text-main)" />
+          <rect x="80" y="80" width="10" height="20" fill="var(--text-main)" />
+          <rect x="90" y="90" width="10" height="10" fill="var(--text-main)" />
+        </svg>
+        <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 8px; font-weight: 500;">Scan to Pay ₹${grandTotal}</span>
+      </div>
+ 
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label for="invUpiId" style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; display: block;">UPI ID</label>
+        <input type="text" class="form-control" id="invUpiId" required pattern="^[\\w.-]+@[\\w.-]+$" placeholder="guest@okaxis" value="${upiId}" ${disabledAttr} style="width: 100%; box-sizing: border-box;">
+      </div>
+      <div class="form-group" style="margin-bottom: 0;">
+        <label for="invUpiTxnId" style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; display: block;">Transaction Reference ID</label>
+        <input type="text" class="form-control" id="invUpiTxnId" required minlength="8" placeholder="TXN987654321" value="${upiTxnId}" ${disabledAttr} style="width: 100%; box-sizing: border-box;">
+      </div>
+    `;
+  } else if (method === 'Bank Transfer') {
+    const bankAccHolder = isCompleted ? (savedDetails ? (savedDetails.bankAccHolder || '') : '') : '';
+    const bankName = isCompleted ? (savedDetails ? (savedDetails.bankName || '') : '') : '';
+    const bankAccNumber = isCompleted ? (savedDetails ? (savedDetails.bankAccNumber || '') : '') : '';
+    const bankIfsc = isCompleted ? (savedDetails ? (savedDetails.bankIfsc || '') : '') : '';
+ 
+    html += `
+      <h4 style="margin-top: 0; margin-bottom: 12px; font-size: 0.95rem; color: var(--text-main); font-weight: 600; display: flex; align-items: center; gap: 6px;">
+        <i class="lucide-landmark" style="width: 16px; height: 16px;"></i> Bank Transfer Information
+      </h4>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label for="invBankAccHolder" style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; display: block;">Account Holder Name</label>
+        <input type="text" class="form-control" id="invBankAccHolder" required minlength="3" placeholder="John Doe" value="${bankAccHolder}" ${disabledAttr} style="width: 100%; box-sizing: border-box;">
+      </div>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label for="invBankName" style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; display: block;">Bank Name</label>
+        <input type="text" class="form-control" id="invBankName" required placeholder="Avalon National Bank" value="${bankName}" ${disabledAttr} style="width: 100%; box-sizing: border-box;">
+      </div>
+      <div class="form-row" style="display: flex; gap: 12px; margin-bottom: 0;">
+        <div class="form-group" style="flex: 1.5; margin-bottom: 0;">
+          <label for="invBankAccNumber" style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; display: block;">Account Number</label>
+          <input type="text" class="form-control" id="invBankAccNumber" required pattern="^\\d{9,18}$" placeholder="123456789012" value="${bankAccNumber}" ${disabledAttr} style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+          <label for="invBankIfsc" style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; display: block;">IFSC Code</label>
+          <input type="text" class="form-control" id="invBankIfsc" required pattern="^[A-Za-z]{4}0[A-Za-z0-9]{6}$" placeholder="ANB0001234" value="${bankIfsc}" ${disabledAttr} style="width: 100%; box-sizing: border-box;" maxlength="11">
+        </div>
+      </div>
+    `;
+  } else if (method === 'Cash') {
+    const cashReceived = isCompleted ? (savedDetails ? (savedDetails.cashReceived || '') : '') : '';
+    const cashChange = isCompleted ? (savedDetails ? (savedDetails.cashChange || '') : '') : '';
+ 
+    html += `
+      <h4 style="margin-top: 0; margin-bottom: 12px; font-size: 0.95rem; color: var(--text-main); font-weight: 600; display: flex; align-items: center; gap: 6px;">
+        <i class="lucide-banknote" style="width: 16px; height: 16px;"></i> Cash Payment Details
+      </h4>
+      <div class="form-row" style="display: flex; gap: 12px; margin-bottom: 0;">
+        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+          <label for="invCashReceived" style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; display: block;">Cash Received (₹)</label>
+          <input type="number" class="form-control" id="invCashReceived" required min="${grandTotal}" placeholder="${grandTotal}" value="${cashReceived}" ${disabledAttr} style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+          <label for="invCashChange" style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; display: block;">Change to Return (₹)</label>
+          <input type="text" class="form-control" id="invCashChange" readonly value="${cashChange}" style="width: 100%; box-sizing: border-box; background-color: var(--bg-secondary); cursor: not-allowed; font-weight: 600; color: var(--success);">
+        </div>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+  createIconsSafe();
+
+  if (method === 'Cash' && !isCompleted) {
+    const cashReceivedInput = document.getElementById('invCashReceived');
+    const cashChangeInput = document.getElementById('invCashChange');
+    if (cashReceivedInput && cashChangeInput) {
+      const calcChange = () => {
+        const amt = parseFloat(cashReceivedInput.value) || 0;
+        const change = Math.max(0, amt - grandTotal);
+        cashChangeInput.value = change.toFixed(0);
+      };
+      cashReceivedInput.addEventListener('input', calcChange);
+      cashReceivedInput.addEventListener('change', calcChange);
+    }
+  }
+
+  if (method === 'Credit Card' && !isCompleted) {
+    const cardNo = document.getElementById('invCardNumber');
+    if (cardNo) {
+      cardNo.addEventListener('input', (e) => {
+        let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+        let formatted = '';
+        for (let i = 0; i < value.length; i++) {
+          if (i > 0 && i % 4 === 0) formatted += ' ';
+          formatted += value[i];
+        }
+        e.target.value = formatted.substring(0, 19);
+      });
+    }
+
+    const cardExp = document.getElementById('invCardExpiry');
+    if (cardExp) {
+      cardExp.addEventListener('input', (e) => {
+        let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+        if (value.length > 2) {
+          e.target.value = value.substring(0, 2) + '/' + value.substring(2, 4);
+        } else {
+          e.target.value = value;
+        }
+      });
+    }
+  }
+}
+
 function openCheckoutBilling(bookingId) {
   closeRoomManagementModal();
   
@@ -1650,6 +2008,13 @@ function openCheckoutBilling(bookingId) {
   document.getElementById('invBookingId').value = booking.id;
   document.getElementById('invGrandTotal').value = grandTotal;
   
+  // Render dynamic payment fields
+  if (booking.status === 'Completed') {
+    updatePaymentDetailsUI(booking.paymentMethod || 'Cash', true, booking.paymentDetails, grandTotal);
+  } else {
+    updatePaymentDetailsUI(paymentMethodSelect ? paymentMethodSelect.value : 'Credit Card', false, null, grandTotal);
+  }
+  
   // 4. Inject invoice visual details
   const container = document.getElementById('invoiceContent');
   
@@ -1689,7 +2054,7 @@ function openCheckoutBilling(bookingId) {
       <p style="color: var(--text-muted);">Billing To:</p>
       <strong>${booking.guestName}</strong>
       <p>Phone: ${booking.guestPhone} | Email: ${booking.guestEmail}</p>
-      <p>Govt ID: <strong>${booking.idType || 'N/A'} - ${booking.idNumber || 'N/A'}</strong></p>
+      <p>Govt ID: <strong>${booking.idType || 'Passport (Dummy)'} - ${booking.idNumber || 'P1234567'}</strong></p>
       <p>Stay Dates: ${new Date(booking.checkIn).toLocaleString()} to ${displayCheckOut.toLocaleString()} (${nights} Night${nights > 1 ? 's' : ''}, Room ${booking.roomNumber} - ${room ? room.type : ''})</p>
     </div>
     
@@ -1768,6 +2133,13 @@ function handleCheckoutPayment(e) {
     return;
   }
   
+  // Validate dynamic payment fields using HTML5 checkValidity
+  const paymentForm = document.getElementById('paymentForm');
+  if (paymentForm && !paymentForm.checkValidity()) {
+    paymentForm.reportValidity();
+    return;
+  }
+  
   // Perform checkout calculations to snapshot invoice details
   const room = state.rooms.find(r => r.number === booking.roomNumber);
   const roomRate = room ? room.rate : 0;
@@ -1792,6 +2164,40 @@ function handleCheckoutPayment(e) {
   const depositPaid = booking.deposit || 0;
   const grandTotal = Math.max(0, subtotal + taxes - depositPaid);
   
+  // For Cash method, validate that cashReceived is sufficient
+  if (paymentMethod === 'Cash') {
+    const cashReceived = parseFloat(document.getElementById('invCashReceived').value) || 0;
+    if (cashReceived < grandTotal) {
+      showToast("Cash received must be at least the grand total of ₹" + grandTotal, 'danger');
+      const cashReceivedInput = document.getElementById('invCashReceived');
+      if (cashReceivedInput) {
+        cashReceivedInput.classList.add('is-invalid');
+        cashReceivedInput.focus();
+      }
+      return;
+    }
+  }
+
+  // Gather values from the dynamic inputs
+  const details = {};
+  if (paymentMethod === 'Credit Card') {
+    details.cardHolder = document.getElementById('invCardHolder').value;
+    details.cardNumber = document.getElementById('invCardNumber').value;
+    details.cardExpiry = document.getElementById('invCardExpiry').value;
+    details.cardCvv = document.getElementById('invCardCvv').value;
+  } else if (paymentMethod === 'UPI / QR Code') {
+    details.upiId = document.getElementById('invUpiId').value;
+    details.upiTxnId = document.getElementById('invUpiTxnId').value;
+  } else if (paymentMethod === 'Bank Transfer') {
+    details.bankAccHolder = document.getElementById('invBankAccHolder').value;
+    details.bankName = document.getElementById('invBankName').value;
+    details.bankAccNumber = document.getElementById('invBankAccNumber').value;
+    details.bankIfsc = document.getElementById('invBankIfsc').value;
+  } else if (paymentMethod === 'Cash') {
+    details.cashReceived = document.getElementById('invCashReceived').value;
+    details.cashChange = document.getElementById('invCashChange').value;
+  }
+  
   // Format checkOut time to local ISO format YYYY-MM-DDTHH:MM
   const tzOffset = finalCheckOut.getTimezoneOffset() * 60000;
   const localCheckOutStr = (new Date(finalCheckOut.getTime() - tzOffset)).toISOString().slice(0, 16);
@@ -1806,6 +2212,7 @@ function handleCheckoutPayment(e) {
   booking.grandTotal = grandTotal;
   booking.paidOrders = roomOrders;
   booking.paymentMethod = paymentMethod;
+  booking.paymentDetails = details;
   
   // Set room to Available but DIRTY (requires cleaning after checkout)
   if (room) {
@@ -1927,6 +2334,23 @@ window.addEventListener('DOMContentLoaded', () => {
   const paymentForm = document.getElementById('paymentForm');
   if (paymentForm) {
     paymentForm.addEventListener('submit', handleCheckoutPayment);
+  }
+
+  const waChatForm = document.getElementById('waChatForm');
+  if (waChatForm) {
+    waChatForm.addEventListener('submit', sendWaMockMessage);
+  }
+  
+  const paymentMethodSelect = document.getElementById('invPaymentMethod');
+  if (paymentMethodSelect) {
+    paymentMethodSelect.addEventListener('change', (e) => {
+      const bookingId = document.getElementById('invBookingId').value;
+      const grandTotal = parseFloat(document.getElementById('invGrandTotal').value) || 0;
+      const booking = state.bookings.find(b => b.id === bookingId);
+      const isCompleted = booking ? booking.status === 'Completed' : false;
+      const savedDetails = (booking && booking.paymentDetails) ? booking.paymentDetails : null;
+      updatePaymentDetailsUI(e.target.value, isCompleted, savedDetails, grandTotal);
+    });
   }
   
   // Booking Modal type selector toggle listeners
